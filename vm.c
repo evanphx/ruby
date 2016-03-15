@@ -479,10 +479,16 @@ ruby_vm_at_exit(void (*func)(rb_vm_t *))
 static void
 ruby_vm_run_at_exit_hooks(rb_vm_t *vm)
 {
-    for(rb_at_exit_list *l = &GET_VM()->at_exit; l; l = l->next) {
+    for(rb_at_exit_list *l = &vm->at_exit; l; l = l->next) {
 	if(l->func) {
 	    (*l->func)(vm);
 	}
+    }
+
+    for(rb_at_exit_list *l = vm->at_exit.next; l;) {
+	rb_at_exit_list* t = l->next;
+	free(l);
+	l = t;
     }
 }
 
