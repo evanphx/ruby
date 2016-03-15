@@ -468,20 +468,22 @@ rb_frame_pop(void)
 void
 ruby_vm_at_exit(void (*func)(rb_vm_t *))
 {
-    rb_ary_push((VALUE)&GET_VM()->at_exit, (VALUE)func);
+    rb_at_exit_list *nl = (rb_at_exit_list*)xmalloc(sizeof(rb_at_exit_list));
+    nl->func = func;
+    nl->next = 0;
+
+    GET_VM()->at_exit_end->next = nl;
+    GET_VM()->at_exit_end = nl;
 }
 
 static void
 ruby_vm_run_at_exit_hooks(rb_vm_t *vm)
 {
-    VALUE hook = (VALUE)&vm->at_exit;
-
-    while (RARRAY_LEN(hook) > 0) {
-	typedef void rb_vm_at_exit_func(rb_vm_t*);
-	rb_vm_at_exit_func *func = (rb_vm_at_exit_func*)rb_ary_pop(hook);
-	(*func)(vm);
+    for(rb_at_exit_list *l = &GET_VM()->at_exit; l; l = l->next) {
+	if(l->func) {
+	    (*l->func)(vm);
+	}
     }
-    rb_ary_free(hook);
 }
 
 /* Env */
@@ -2170,8 +2172,7 @@ vm_init2(rb_vm_t *vm)
     MEMZERO(vm, rb_vm_t, 1);
     rb_vm_living_threads_init(vm);
     vm->src_encoding_index = -1;
-    vm->at_exit.basic.flags = (T_ARRAY | RARRAY_EMBED_FLAG) & ~RARRAY_EMBED_LEN_MASK; /* len set 0 */
-    rb_obj_hide((VALUE)&vm->at_exit);
+    vm->at_exit_end = &vm->at_exit;
 
     vm_default_params_setup(vm);
 }

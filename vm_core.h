@@ -459,6 +459,14 @@ enum ruby_basic_operators {
 #define GetVMPtr(obj, ptr) \
   GetCoreDataFromValue((obj), rb_vm_t, (ptr))
 
+typedef struct rb_vm_struct rb_vm_t;
+typedef void rb_vm_at_exit_func(rb_vm_t*);
+
+typedef struct rb_at_exit_list {
+    rb_vm_at_exit_func *func;
+    struct rb_at_exit_list *next;
+} rb_at_exit_list;
+
 struct rb_objspace;
 struct rb_objspace *rb_objspace_alloc(void);
 void rb_objspace_free(struct rb_objspace *);
@@ -527,11 +535,8 @@ typedef struct rb_vm_struct {
 
     struct rb_objspace *objspace;
 
-    /*
-     * @shyouhei notes that this is not for storing normal Ruby
-     * objects so do *NOT* mark this when you GC.
-     */
-    struct RArray at_exit;
+    rb_at_exit_list at_exit;
+    rb_at_exit_list *at_exit_end;
 
     VALUE *defined_strings;
     st_table *frozen_strings;
