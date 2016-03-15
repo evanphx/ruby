@@ -459,8 +459,8 @@ enum ruby_basic_operators {
 #define GetVMPtr(obj, ptr) \
   GetCoreDataFromValue((obj), rb_vm_t, (ptr))
 
-typedef struct rb_vm_struct rb_vm_t;
-typedef void rb_vm_at_exit_func(rb_vm_t*);
+struct rb_vm_struct;
+typedef void rb_vm_at_exit_func(struct rb_vm_struct*);
 
 typedef struct rb_at_exit_list {
     rb_vm_at_exit_func *func;
